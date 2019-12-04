@@ -6,7 +6,7 @@ var cpath = [];
 var clicked;
 var hobbygen;
 var maxWidth = 10;
-var minWidth = 5;
+var minWidth = 2;
 maxWidth -= minWidth;
 
 function init() {
@@ -18,19 +18,34 @@ function init() {
     cvs.addEventListener('mouseout', doMouseOut, false);
     cvs.addEventListener('mousemove', doMouseMove, false);
 
+    cvs.addEventListener('touchstart', doMouseDown, false);
+    cvs.addEventListener('touchend', doMouseUp, false);
+    cvs.addEventListener('touchcancel', doMouseOut, false);
+    cvs.addEventListener('touchmove', doMouseMove, false);
+
+    window.addEventListener('resize', resize, false);
+    resize();
     setInterval(draw,50);
 }
 
 window.onload = init;
+
+function resize() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    cvs.setAttribute('width', w - 20);
+    cvs.setAttribute('height', h - 20);
+}
 
 function draw() {
     clear(ctx);
     var pts;
     var sw;
     for (var i = 0; i < paths.length; i++) {
+	sw = maxWidth;
 	for (var j = 0; j < paths[i].length; j++) {
 	    pts = paths[i][j];
-	    sw = maxWidth*Math.exp(-vecDist(pts[3],pts[0])/10) + minWidth;
+	    sw = 0.7*maxWidth + 0.3*(maxWidth*Math.exp(-vecDist(pts[3],pts[0])/10) + minWidth);
 	    ctx.beginPath();
 	    ctx.lineWidth = sw;
 	    ctx.moveTo(pts[0].x, pts[0].y);
@@ -50,6 +65,7 @@ function getRelativeCoords(event) {
 }
 
 function doMouseOut(e) {
+    e.preventDefault();
     if (clicked) {
 	addPoint(getRelativeCoords(e));
     }
@@ -58,12 +74,14 @@ function doMouseOut(e) {
 }
 
 function doMouseMove(e) {
+    e.preventDefault();
     if (clicked) {
 	addPoint(getRelativeCoords(e));
     }
 }
 
 function doMouseUp(e) {
+    e.preventDefault();
     if (clicked) {
 	addPoint(getRelativeCoords(e));
     }
@@ -72,6 +90,7 @@ function doMouseUp(e) {
 }
 
 function doMouseDown(e) {
+    e.preventDefault();
     clicked = true;
     points = [getRelativeCoords(e)];
     cpath = [];
