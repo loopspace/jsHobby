@@ -4,6 +4,7 @@ var paths = [];
 var points = [];
 var cpath = [];
 var clicked;
+var touchid;
 var hobbygen;
 var maxWidth = 10;
 var minWidth = 2;
@@ -18,10 +19,10 @@ function init() {
     cvs.addEventListener('mouseout', doMouseOut, false);
     cvs.addEventListener('mousemove', doMouseMove, false);
 
-    cvs.addEventListener('touchstart', doMouseDown, false);
-    cvs.addEventListener('touchend', doMouseUp, false);
-    cvs.addEventListener('touchcancel', doMouseOut, false);
-    cvs.addEventListener('touchmove', doMouseMove, false);
+    cvs.addEventListener('touchstart', doTouchStart, false);
+    cvs.addEventListener('touchend', doTouchEnd, false);
+    cvs.addEventListener('touchcancel', doTouchCancel, false);
+    cvs.addEventListener('touchmove', doTouchMove, false);
 
     window.addEventListener('resize', resize, false);
     resize();
@@ -60,41 +61,99 @@ function draw() {
 }
 
 function getRelativeCoords(event) {
-    if (event.offsetX !== undefined && event.offsetY !== undefined) { return { x: event.offsetX, y: event.offsetY }; }
-    return { x: event.layerX, y: event.layerY };
+    if (event.offsetX !== undefined && event.offsetY !== undefined) {
+	return { x: event.offsetX, y: event.offsetY };
+    }
+    if (event.layerX !== undefined && event.layerY !== undefined) {
+	return { x: event.layerX, y: event.layerY };
+    }
+    var tgt = event.target;
+    var x = Math.floor(event.pageX - parseInt(tgt.offsetLeft,10));
+    var y = Math.floor(event.pageY - parseInt(tgt.offsetTop,10));
+    return {x: x, y: y};
 }
 
 function doMouseOut(e) {
     e.preventDefault();
-    if (clicked) {
-	addPoint(getRelativeCoords(e));
-    }
-    clicked = false;
-    hobbygen = false;
+    stopPath(getRelativeCoords(e));
 }
 
 function doMouseMove(e) {
     e.preventDefault();
-    if (clicked) {
-	addPoint(getRelativeCoords(e));
-    }
+    continuePath(getRelativeCoords(e));
 }
 
 function doMouseUp(e) {
     e.preventDefault();
-    if (clicked) {
-	addPoint(getRelativeCoords(e));
-    }
-    clicked = false;
-    hobbygen = false;
+    stopPath(getRelativeCoords(e));
 }
 
 function doMouseDown(e) {
     e.preventDefault();
+    startPath(getRelativeCoords(e));
+}
+
+function doTouchCancel(e) {
+    e.preventDefault();
+    if (!touchid) {return;}
+    for (var i = 0; i < e.changedTouches.length; i++) {
+	if (e.changedTouches.item(i).identifier == touchid) {
+	    stopPath(getRelativeCoords(e.changedTouches.item(i)));
+	    break;
+	}
+    }
+    touchid = null;
+}
+
+function doTouchMove(e) {
+    e.preventDefault();
+    if (!touchid) {return;}
+    for (var i = 0; i < e.changedTouches.length; i++) {
+	if (e.changedTouches.item(i).identifier == touchid) {
+	    continuePath(getRelativeCoords(e.changedTouches.item(i)));
+	    break;
+	}
+    }
+}
+
+function doTouchEnd(e) {
+    e.preventDefault();
+    if (!touchid) {return;}
+    for (var i = 0; i < e.changedTouches.length; i++) {
+	if (e.changedTouches.item(i).identifier == touchid) {
+	    stopPath(getRelativeCoords(e.changedTouches.item(i)));
+	    break;
+	}
+    }
+    touchid = null;
+}
+
+function doTouchStart(e) {
+    e.preventDefault();
+    touchid = e.changedTouches.item(0).identifier;
+    startPath(getRelativeCoords(e.changedTouches.item(0)));
+}
+
+
+function startPath(p) {
     clicked = true;
-    points = [getRelativeCoords(e)];
+    points = [p];
     cpath = [];
     paths.push(cpath);
+    hobbygen = false;
+}
+
+function continuePath(p) {
+    if (clicked) {
+	addPoint(p);
+    }
+}
+
+function stopPath(p) {
+    if (clicked) {
+	addPoint(p);
+    }
+    clicked = false;
     hobbygen = false;
 }
 
